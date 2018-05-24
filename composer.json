@@ -1,0 +1,43 @@
+{
+    "name": "lifeonscreen/laravel-quickbooks",
+    "description": "Laravel Quickbooks integration",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jani Cerar",
+            "email": "jani.cerar@lifeonscreen.com",
+            "homepage": "https://lifeonscreen.com"
+        }
+    ],
+    "homepage": "https://github.com/LifeOnScreen/laravel-quickbooks",
+    "keywords": ["Laravel", "laravel-quickbooks"],
+    "require": {
+        "illuminate/support": "~5",
+        "quickbooks/v3-php-sdk": "^4.0.1",
+        "appstract/laravel-options": "^1.0.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~6.0",
+        "orchestra/testbench": "~3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "LifeOnScreen\\LaravelQuickBooks\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LifeOnScreen\\LaravelQuickBooks\\Tests\\": "tests"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "LifeOnScreen\\LaravelQuickBooks\\LaravelQuickBooksServiceProvider"
+            ],
+            "aliases": {
+                "laravel-quickbooks": "LifeOnScreen\\LaravelQuickBooks\\Facades\\LaravelQuickBooks"
+            }
+        }
+    }
+}
