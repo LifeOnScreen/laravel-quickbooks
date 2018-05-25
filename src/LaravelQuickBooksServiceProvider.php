@@ -13,9 +13,6 @@ class LaravelQuickBooksServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->loadRoutesFrom(__DIR__ . '/Routes/routes.php');
-        $this->loadViewsFrom(__DIR__ . '/path/to/views', 'courier');
-
         // Publishing is only necessary when using the CLI.
         if ($this->app->runningInConsole()) {
 

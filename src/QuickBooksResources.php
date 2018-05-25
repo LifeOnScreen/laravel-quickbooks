@@ -2,7 +2,7 @@
 
 namespace LifeOnScreen\LaravelQuickBooks;
 
-use QuickBooksOnline\API\Facades AS QuickBooksFacades;
+use QuickBooksOnline\API\Facades as QuickBooksFacades;
 
 /**
  * Class QuickBooksResources

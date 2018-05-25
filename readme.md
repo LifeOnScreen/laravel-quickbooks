@@ -45,8 +45,38 @@ QB_BASE_URL=
 
 ### Connect QuickBooks account
 
-Go to `{yourdomain}/quickbooks/connect` to 
-connect your QuickBooks account with your application.
+To connect your application with your QuickBooks company you can use `QuickbooksConnect` helper.
+Helper has two methods:
+* `getAuthorizationUrl` -> Returns redirect URL and puts `quickbooks_auth` cookie into Laravel cookie queue. 
+Cookie is valid for 30 minutes.
+* `processHook` -> Validates `quickbooks_auth` cookie and sets realm id, access token and refresh token.
+
+Usage example:
+
+```php
+namespace App\Http\Controllers;
+
+use LifeOnScreen\LaravelQuickBooks\QuickbooksConnect;
+use Cookie;
+
+class QuickBooksController extends Controller
+{
+    public function connect()
+    {
+        return redirect(QuickbooksConnect::getAuthorizationUrl())
+            ->withCookies(Cookie::getQueuedCookies());
+    }
+
+    public function refreshTokens()
+    {
+        if (QuickbooksConnect::processHook()) {
+            return 'Tokens successfully refreshed.';
+        }
+
+        return 'There were some problems refreshing tokens.';
+    }
+}
+```
 
 ### Sync Eloquent model to QuickBooks
 
