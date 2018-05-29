@@ -30,16 +30,6 @@ abstract class QuickBooksEntity extends Model implements QuickBookable
      */
     protected $quickBooksConnection;
 
-    /**
-     * QuickBooksEntity constructor.
-     * @param array $attributes
-     */
-    public function __construct(array $attributes = [])
-    {
-        $this->quickBooksConnection = App::make(QuickBooksConnection::class);
-        parent::__construct($attributes);
-    }
-
     abstract protected function getQuickBooksArray(): array;
 
     /**
@@ -140,6 +130,7 @@ abstract class QuickBooksEntity extends Model implements QuickBookable
      */
     public function syncToQuickbooks(): bool
     {
+        $this->quickBooksConnection = App::make(QuickBooksConnection::class);
         $syncArray = $this->getQuickBooksArray();
         if (empty($this->quickbooks_id)) {
             return $this->insertToQuickBooks($syncArray);
