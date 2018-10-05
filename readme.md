@@ -43,6 +43,40 @@ QB_SCOPE=
 QB_BASE_URL=
 ```
 
+### Token Handling
+
+Since every application is setup differently, you will need to create an implementation of `QuickBooksTokenHandlerInterface` for persisting the tokens in your database. By default, the tokens are stored using Laravel Cache API for 7 days.
+
+For example, if you use the [Laravel Options](https://github.com/appstract/laravel-options) package you would create the following class somewhere in your project:
+
+```php
+namespace App;
+
+use LifeOnScreen\LaravelQuickBooks\QuickBooksTokenHandlerInterface;
+
+class QuickBooksTokenHandler implements QuickBooksTokenHandlerInterface
+{
+    public function set($key, $value)
+    {
+        option([$key => $value]);
+    }
+
+    public function get($key)
+    {
+        return option($key);
+    }
+}
+```
+
+Then bind it in your `AppServiceProvider.php`:
+
+```php
+public function boot()
+{        
+    $this->app->bind(QuickBooksTokenHandlerInterface::class, QuickBooksTokenHandler::class);
+}
+```
+
 ### Connect QuickBooks account
 
 To connect your application with your QuickBooks company you can use `QuickbooksConnect` helper.
