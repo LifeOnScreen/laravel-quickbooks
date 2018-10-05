@@ -13,6 +13,7 @@ class LaravelQuickBooksServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+
         // Publishing is only necessary when using the CLI.
         if ($this->app->runningInConsole()) {
 
@@ -30,12 +31,15 @@ class LaravelQuickBooksServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/quickbooks.php', 'laravel-quickbooks');
+        $this->mergeConfigFrom(__DIR__ . '/../config/quickbooks.php', 'quickbooks');
 
         // Register the service the package provides.
         $this->app->singleton('QuickBooksConnection', function ($app) {
             return new QuickBooksConnection;
         });
+
+        // Register the service the package provides.
+        $this->app->singleton(QuickBooksTokenHandlerInterface::class, QuickBooksTokenHandler::class);
     }
 
     /**

@@ -2,11 +2,12 @@
 
 namespace LifeOnScreen\LaravelQuickBooks;
 
-use Carbon\Carbon;
-use Cookie;
 use Exception;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Request;
 use QuickBooksOnline\API\DataService\DataService;
-use Request;
 
 /**
  * Class Init
@@ -14,17 +15,18 @@ use Request;
  */
 class QuickbooksConnect
 {
-
     /**
      * @return string
      * @throws \QuickBooksOnline\API\Exception\SdkException
      */
     public static function getAuthorizationUrl(): string
     {
+
+        $cookieLife  = 30;
         $cookieValue = str_random(32);
-        $validUntil = Carbon::now()->addMinutes(30)->timestamp;
-        Cookie::queue(Cookie::make('quickbooks_auth', $cookieValue, 30));
-        option(['qb-auth' => "{$cookieValue}|{$validUntil}"]);
+        $validUntil = Carbon::now()->addMinutes($cookieLife)->timestamp;
+        Cookie::queue(Cookie::make('quickbooks_auth', $cookieValue, $cookieLife));
+        cache(['qb-auth-cookie' => "{$cookieValue}|{$validUntil}"], $cookieLife);
 
         return self::getDataService()->getOAuth2LoginHelper()->getAuthorizationCodeURL();
     }
@@ -48,9 +50,11 @@ class QuickbooksConnect
 
             $accessTokenValue = $accessTokenObj->getAccessToken();
             $refreshTokenValue = $accessTokenObj->getRefreshToken();
-            option(['qb-realm-id' => $realmID]);
-            option(['qb-access-token' => $accessTokenValue]);
-            option(['qb-refresh-token' => $refreshTokenValue]);
+
+            $tokenHandler = static::getTokenHandler();
+            $tokenHandler->set('qb-realm-id', $realmID);
+            $tokenHandler->set('qb-access-token', $accessTokenValue);
+            $tokenHandler->set('qb-refresh-token', $refreshTokenValue);
 
             return true;
         } catch (Exception $e) {
@@ -74,13 +78,19 @@ class QuickbooksConnect
         ]);
     }
 
+    protected static function getTokenHandler(): QuickBooksTokenHandlerInterface
+    {
+        return App::make(QuickBooksTokenHandlerInterface::class);
+    }
+
     /**
      * Checks if the cookie is valid.
      * @return bool
      */
     protected static function cookieIsValid(): bool
     {
-        $validCookie = explode('|', option('qb-auth'));
+        $validCookie = explode('|', cache('qb-auth-cookie'));
+
         if ($validCookie[0] === Cookie::get('quickbooks_auth') && (int)$validCookie[1] > time()) {
             return true;
         }
