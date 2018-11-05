@@ -45,16 +45,16 @@ QB_BASE_URL=
 
 ### Token Handling
 
-Since every application is setup differently, you will need to create an implementation of `QuickBooksTokenHandlerInterface` for persisting the tokens in your database. By default, the tokens are stored using Laravel Cache API for 7 days.
+Since every application is setup differently, you will need to create a class that extends `QuickBooksTokenHandler` to persist the tokens in your database. By default, the tokens are stored using the Laravel Cache API for 7 days.
 
 For example, if you use the [Laravel Options](https://github.com/appstract/laravel-options) package you would create the following class somewhere in your project:
 
 ```php
-namespace App;
+namespace App\QuickBooks;
 
-use LifeOnScreen\LaravelQuickBooks\QuickBooksTokenHandlerInterface;
+use LifeOnScreen\LaravelQuickBooks\QuickBooksTokenHandler;
 
-class QuickBooksTokenHandler implements QuickBooksTokenHandlerInterface
+class TokenHandler extends QuickBooksTokenHandler
 {
     public function set($key, $value)
     {
@@ -73,13 +73,16 @@ Then bind it in your `AppServiceProvider.php`:
 ```php
 public function boot()
 {        
-    $this->app->bind(QuickBooksTokenHandlerInterface::class, QuickBooksTokenHandler::class);
+    $this->app->bind(
+        \LifeOnScreen\LaravelQuickBooks\QuickBooksTokenHandlerInterface::class, 
+        \App\QuickBooks\TokenHandler::class
+    );
 }
 ```
 
 ### Connect QuickBooks account
 
-To connect your application with your QuickBooks company you can use `QuickbooksConnect` helper.
+To connect your application with your QuickBooks company you can use `QuickBooksAuthenticator` helper.
 Helper has two methods:
 * `getAuthorizationUrl` -> Returns redirect URL and puts `quickbooks_auth` cookie into Laravel cookie queue. 
 Cookie is valid for 30 minutes.
@@ -90,20 +93,20 @@ Usage example:
 ```php
 namespace App\Http\Controllers;
 
-use LifeOnScreen\LaravelQuickBooks\QuickbooksConnect;
+use LifeOnScreen\LaravelQuickBooks\QuickBooksAuthenticator;
 use Cookie;
 
 class QuickBooksController extends Controller
 {
     public function connect()
     {
-        return redirect(QuickbooksConnect::getAuthorizationUrl())
+        return redirect(QuickBooksAuthenticator::getAuthorizationUrl())
             ->withCookies(Cookie::getQueuedCookies());
     }
 
     public function refreshTokens()
     {
-        if (QuickbooksConnect::processHook()) {
+        if (QuickBooksAuthenticator::processHook()) {
             return 'Tokens successfully refreshed.';
         }
 
@@ -114,12 +117,12 @@ class QuickBooksController extends Controller
 
 ### Sync Eloquent model to QuickBooks
 
-You need to extend `LifeOnScreen\LaravelQuickBooks\QuickBooksEntity` class which is already 
-extending the Eloquent model.
+You can either extend `LifeOnScreen\LaravelQuickBooks\QuickBooksEntity` class which is already 
+extending the Eloquent model or you can use the `LifeOnScreen\LaravelQuickBooks\SyncsToQuickBooks` trait.
 
 Then you have to define:
  * `quickBooksIdColumn` -> default value is quickbooks_id (if want to use different column to store QuickBooks id in database change this value.)
- * `quickBooksResource` -> Use one of `LifeOnScreen\LaravelQuickBooks\QuickBooksResources` constants.
+ * `quickBooksResource` -> Use of the QuickBooks resources classes (e.g. `\LifeOnScreen\LaravelQuickBooks\Resources\Company::class`).
  * `getQuickBooksArray()` -> This method must return the associative array which will be synced to QuickBooks.
 
 Usage example:
@@ -128,7 +131,7 @@ Usage example:
 namespace App\Models\Company;
 
 use LifeOnScreen\LaravelQuickBooks\QuickBooksEntity;
-use LifeOnScreen\LaravelQuickBooks\QuickBooksResources;
+use LifeOnScreen\LaravelQuickBooks\Resources\Customer;
 
 class Company extends QuickBooksEntity
 {
@@ -140,10 +143,10 @@ class Company extends QuickBooksEntity
     protected $quickBooksIdColumn = 'quickbooks_id';
         
     /**
-     * Use one of LifeOnScreen\LaravelQuickBooks\QuickBooksResources constants
+     * Use one of LifeOnScreen\LaravelQuickBooks\Resources classes
      * @var array
      */
-    protected $quickBooksResource = QuickBooksResources::CUSTOMER;
+    protected $quickBooksResource = Customer::class;
     
     /**
      * @return array
@@ -158,7 +161,7 @@ class Company extends QuickBooksEntity
     }
 }
 ```
-When you want to sync resource you must call `syncToQuickbooks()`. Method returns true if syncing is successful.
+When you want to sync resource you must call `syncToQuickBooks()`. Method returns true if syncing is successful.
 You can get last QuickBooks error with method `getLastQuickBooksError()`.
 
 Syncing example:
@@ -171,12 +174,44 @@ Syncing example:
 public function syncExample()
 {
     $company = Company::find(1);
-    if($company->syncToQuickbooks()){
+    if ($company->syncToQuickBooks()){
         return 'Success';
     }
-    return $company->getLastQuickBooksError()->getOAuthHelperError();
+    return $company->getLastQuickBooksError();
 }
 ```
+
+### Using the QuickBooks Resource Classes
+
+You can use the included resource classes in `LifeOnScreen\LaravelQuickBooks\Resources` to create, update, delete, and query resources from QuickBooks. 
+
+Examples:
+```
+$customer = new LifeOnScreen\LaravelQuickBooks\Resources\Customer;
+
+// create
+$customer->create([
+    'GivenName'  => 'John',
+    'FamilyName' => 'Smith',
+]);
+
+// update item with ID "123"
+$customer->update(123, [
+    'GivenName'  => 'John',
+    'FamilyName' => 'Smith',
+]);
+
+// find by ID:
+$customer->find(123);
+
+// find by a specific field:
+$customer->findBy('FamilyName', 'Smith');
+
+// find multiple items:
+$customer->query();
+```
+
+See `QuickBooksResource.php` for further documentation. 
 
 ## Changelog
 
@@ -192,7 +227,7 @@ If you discover any security related issues, please email author instead of usin
 
 ## Credits
 
-- [Jani Cerar](https://github.com/janicerar)
+- [Jani Cerar](https://github.com/janicerar), [Aaron Harp](https://github.com/arharp)
 
 ## License
 

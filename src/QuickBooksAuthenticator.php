@@ -7,13 +7,14 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Request;
+use QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2LoginHelper;
 use QuickBooksOnline\API\DataService\DataService;
 
 /**
  * Class Init
  * @package LifeOnScreen\LaravelQuickBooks
  */
-class QuickbooksConnect
+class QuickBooksAuthenticator
 {
     /**
      * @return string
@@ -21,14 +22,13 @@ class QuickbooksConnect
      */
     public static function getAuthorizationUrl(): string
     {
-
         $cookieLife  = 30;
         $cookieValue = str_random(32);
-        $validUntil = Carbon::now()->addMinutes($cookieLife)->timestamp;
+        $validUntil  = Carbon::now()->addMinutes($cookieLife)->timestamp;
         Cookie::queue(Cookie::make('quickbooks_auth', $cookieValue, $cookieLife));
         cache(['qb-auth-cookie' => "{$cookieValue}|{$validUntil}"], $cookieLife);
 
-        return self::getDataService()->getOAuth2LoginHelper()->getAuthorizationCodeURL();
+        return self::getLoginHelper()->getAuthorizationCodeURL();
     }
 
     /**
@@ -39,27 +39,55 @@ class QuickbooksConnect
     {
         $realmID = Request::get('realmId');
         $requestCode = Request::get('code');
+
         if (empty($realmID) || empty($requestCode) || !self::cookieIsValid()) {
             return false;
         }
 
         try {
 
-            $OAuth2LoginHelper = self::getDataService()->getOAuth2LoginHelper();
-            $accessTokenObj = $OAuth2LoginHelper->exchangeAuthorizationCodeForToken($requestCode, $realmID);
+            $accessTokenObj = self::getLoginHelper()->exchangeAuthorizationCodeForToken($requestCode, $realmID);
 
-            $accessTokenValue = $accessTokenObj->getAccessToken();
+            $accessTokenValue  = $accessTokenObj->getAccessToken();
             $refreshTokenValue = $accessTokenObj->getRefreshToken();
 
             $tokenHandler = static::getTokenHandler();
-            $tokenHandler->set('qb-realm-id', $realmID);
-            $tokenHandler->set('qb-access-token', $accessTokenValue);
-            $tokenHandler->set('qb-refresh-token', $refreshTokenValue);
+            $tokenHandler->setRealmId($realmID);
+            $tokenHandler->setAccessToken($accessTokenValue);
+            $tokenHandler->setRefreshToken($refreshTokenValue);
 
             return true;
+
         } catch (Exception $e) {
             return false;
         }
+    }
+
+    /**
+     * Revoke access for the access and refresh tokens.
+     *
+     * @throws \QuickBooksOnline\API\Exception\SdkException
+     */
+    public static function revokeAccess()
+    {
+        $tokenHandler = self::getTokenHandler();
+
+        try {
+            if ($tokenHandler->getAccessToken()) {
+                self::getLoginHelper()->revokeToken($tokenHandler->getAccessToken());
+            }
+
+            if ($tokenHandler->getRefreshToken()) {
+                self::getLoginHelper()->revokeToken($tokenHandler->getRefreshToken());
+            }
+        }
+        catch (Exception $e) {}
+
+        $tokenHandler->setRealmId(null);
+        $tokenHandler->setAccessToken(null);
+        $tokenHandler->setRefreshToken(null);
+
+        return true;
     }
 
     /**
@@ -78,9 +106,41 @@ class QuickbooksConnect
         ]);
     }
 
+    /**
+     * @return OAuth2LoginHelper
+     * @throws \QuickBooksOnline\API\Exception\SdkException
+     */
+    protected static function getLoginHelper(): OAuth2LoginHelper
+    {
+        return self::getDataService()->getOAuth2LoginHelper();
+    }
+
+    /**
+     * Get the instance of the token handler.
+     *
+     * @return QuickBooksTokenHandlerInterface
+     */
     protected static function getTokenHandler(): QuickBooksTokenHandlerInterface
     {
         return App::make(QuickBooksTokenHandlerInterface::class);
+    }
+
+    /**
+     * Validate that we have an active connection.
+     */
+    public static function validConnectionExists(): bool
+    {
+        if (!self::getTokenHandler()->getAccessToken() || !self::getTokenHandler()->getRefreshToken()) {
+            return false;
+        }
+
+        try {
+            App::make(QuickBooksConnection::class);
+            return true;
+        }
+        catch (Exception $e) {
+            return false;
+        }
     }
 
     /**
