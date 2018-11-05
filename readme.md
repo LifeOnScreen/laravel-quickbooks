@@ -83,10 +83,10 @@ public function boot()
 ### Connect QuickBooks account
 
 To connect your application with your QuickBooks company you can use `QuickBooksAuthenticator` helper.
-Helper has two methods:
-* `getAuthorizationUrl` -> Returns redirect URL and puts `quickbooks_auth` cookie into Laravel cookie queue. 
+It has two methods:
+* `getAuthorizationUrl()` - Returns redirect URL and puts `quickbooks_auth` cookie into Laravel cookie queue. 
 Cookie is valid for 30 minutes.
-* `processHook` -> Validates `quickbooks_auth` cookie and sets realm id, access token and refresh token.
+* `processHook()` - Validates `quickbooks_auth` cookie and sets realm id, access token and refresh token.
 
 Usage example:
 
@@ -117,13 +117,13 @@ class QuickBooksController extends Controller
 
 ### Sync Eloquent model to QuickBooks
 
-You can either extend `LifeOnScreen\LaravelQuickBooks\QuickBooksEntity` class which is already 
+You can either extend the `LifeOnScreen\LaravelQuickBooks\QuickBooksEntity` class which is already 
 extending the Eloquent model or you can use the `LifeOnScreen\LaravelQuickBooks\SyncsToQuickBooks` trait.
 
 Then you have to define:
- * `quickBooksIdColumn` -> default value is quickbooks_id (if want to use different column to store QuickBooks id in database change this value.)
- * `quickBooksResource` -> Use of the QuickBooks resources classes (e.g. `\LifeOnScreen\LaravelQuickBooks\Resources\Company::class`).
- * `getQuickBooksArray()` -> This method must return the associative array which will be synced to QuickBooks.
+ * `quickBooksResource` - One of the QuickBooks resources classes (e.g.. `\LifeOnScreen\LaravelQuickBooks\Resources\Company::class`).
+ * `getQuickBooksArray()` - This method must return the associative array which will be synced to QuickBooks.
+ * `quickBooksIdColumn` (optional) - The column to use for storing the QuickBooks ID (defaults to `quickbooks_id`)
 
 Usage example:
 
@@ -161,7 +161,7 @@ class Company extends QuickBooksEntity
     }
 }
 ```
-When you want to sync resource you must call `syncToQuickBooks()`. Method returns true if syncing is successful.
+When you want to sync a resource you must call `syncToQuickBooks()`. Method returns true if syncing is successful.
 You can get last QuickBooks error with method `getLastQuickBooksError()`.
 
 Syncing example:
@@ -183,7 +183,7 @@ public function syncExample()
 
 ### Using the QuickBooks Resource Classes
 
-You can use the included resource classes in `LifeOnScreen\LaravelQuickBooks\Resources` to create, update, delete, and query resources from QuickBooks. 
+You can use the included resource classes in `LifeOnScreen\LaravelQuickBooks\Resources` to create, update, and query resources from QuickBooks. 
 
 Examples:
 ```
