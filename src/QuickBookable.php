@@ -6,7 +6,7 @@ interface QuickBookable
 {
     public function getQuickBooksIdAttribute();
 
-    public function getQuickBooksResourceAttribute();
+    public function getQuickBooksArray();
 
     public function syncToQuickbooks();
 }
