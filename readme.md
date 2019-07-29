@@ -124,6 +124,8 @@ Then you have to define:
  * `quickBooksResource` - One of the QuickBooks resources classes (e.g.. `\LifeOnScreen\LaravelQuickBooks\Resources\Company::class`).
  * `getQuickBooksArray()` - This method must return the associative array which will be synced to QuickBooks.
  * `quickBooksIdColumn` (optional) - The column to use for storing the QuickBooks ID (defaults to `quickbooks_id`)
+ * `quickBooksSyncTokenColumn` (optional) - The column to use for storing the QuickBooks SyncToken (defaults to `sync_token`)
+ * `returnObject` (optional) - The property to define if INSERT and UPDATE Operation return the QuickBooks Object or a boolean (defaults to `false`)
 
 Usage example:
 

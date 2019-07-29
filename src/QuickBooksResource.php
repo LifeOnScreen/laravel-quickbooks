@@ -48,17 +48,18 @@ class QuickBooksResource
             $this->name   = $resource['name'];
         }
 
-        $this->connection = App::make(QuickBooksConnection::class);
+        $this->connection = App::make('QuickBooksConnection');
     }
 
     /**
      * Create a resource
      *
      * @param array $attributes
+     * @param bool $returnObject This parameter manages if this method return An object or an Id
      * @return bool|int
      * @throws \QuickBooksOnline\API\Exception\IdsException
      */
-    public function create($attributes)
+    public function create($attributes, bool $returnObject = false)
     {
         $object = $this->getResourceFacade()::create($attributes);
 
@@ -66,16 +67,18 @@ class QuickBooksResource
             return false;
         }
 
-        return (int) $response->Id;
+        return $returnObject ? $response : (int) $response->Id;
     }
 
     /**
      * Update a resource.
-     *
-     * @param $where
+     * @param $id
      * @param $attributes
+     * @param bool $returnObject
+     * @return bool
+     * @throws \Exception
      */
-    public function update($id, $attributes)
+    public function update($id, $attributes, bool $returnObject = false)
     {
         $resource = $this->find($id);
 
@@ -89,7 +92,7 @@ class QuickBooksResource
             return false;
         }
 
-        return $response->Id;
+        return $returnObject ? $response : $response->Id;
     }
 
     /**
@@ -182,7 +185,7 @@ class QuickBooksResource
      *
      * @return string
      */
-    protected function getResourceFacade()
+    public function getResourceFacade()
     {
         return $this->facade;
     }
@@ -192,7 +195,7 @@ class QuickBooksResource
      *
      * @return string
      */
-    protected function getResourceName()
+    public function getResourceName()
     {
         return $this->name;
     }
