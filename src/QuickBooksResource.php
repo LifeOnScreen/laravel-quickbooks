@@ -118,6 +118,24 @@ class QuickBooksResource
     }
 
     /**
+     * Count the resources by the provided array of column/value pairs.
+     *
+     * @param array $where
+     * @return int
+     * @throws \Exception
+     */
+    public function count($where = null)
+    {
+        $query = 'SELECT COUNT(*) FROM ' . $this->getResourceName();
+
+        if (is_array($where)) {
+            $query .= $this->buildWhereString($where);
+        }
+
+        return $this->request('Query', $query);
+    }
+
+    /**
      * Query the resources by the provided array of column/value pairs.
      *
      * @param array $where
