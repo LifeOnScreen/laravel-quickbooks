@@ -29,4 +29,9 @@ abstract class QuickBooksEntity extends Model implements QuickBookable
      * @var string
      */
     protected $quickBooksResource;
+    
+    /**
+     * @return array
+     */
+    public abstract function getQuickBooksArray() : array;
 }
