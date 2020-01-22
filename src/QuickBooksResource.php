@@ -71,6 +71,22 @@ class QuickBooksResource
     }
 
     /**
+     * Method to Void a Resource
+     *
+     * @param $object
+     * @param bool $returnObject
+     * @return bool
+     */
+    public function void($object, bool $returnObject=false)
+    {
+        if (!$response = $this->request('Void', $object)) {
+            return false;
+        }
+
+        return $returnObject ? $response : $response->Id;
+    }
+
+    /**
      * Update a resource.
      * @param $id
      * @param $attributes
