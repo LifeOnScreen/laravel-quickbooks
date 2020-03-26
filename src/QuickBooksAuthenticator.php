@@ -40,7 +40,7 @@ class QuickBooksAuthenticator
         $realmID = Request::get('realmId');
         $requestCode = Request::get('code');
 
-        if (empty($realmID) || empty($requestCode) || !self::cookieIsValid()) {
+        if (empty($realmID) || empty($requestCode) || !static::cookieIsValid()) {
             return false;
         }
 
@@ -94,7 +94,7 @@ class QuickBooksAuthenticator
      * Get QuickBooksOnline\API\DataService\DataService object.
      * @throws \QuickBooksOnline\API\Exception\SdkException
      */
-    protected static function getDataService(): DataService
+    protected static function getDataService()
     {
         return DataService::Configure([
             'auth_mode'    => config('quickbooks.data-service.auth-mode'),
@@ -135,12 +135,17 @@ class QuickBooksAuthenticator
         }
 
         try {
-            App::make(QuickBooksConnection::class);
+            static::getConnection();
             return true;
         }
         catch (Exception $e) {
             return false;
         }
+    }
+
+    protected static function getConnection()
+    {
+        return App::make('QuickBooksConnection');
     }
 
     /**
